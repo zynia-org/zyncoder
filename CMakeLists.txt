@@ -7,6 +7,11 @@ include(CheckLibraryExists)
 
 link_directories(/usr/local/lib)
 
+# gcc 12+ requires -fcommon flag to overcome issues with multiple defs of global vars
+# gcc 8 does not, but isn't harmed if its set
+# FGH 2023-11-07
+add_compile_options(-fcommon)
+
 check_library_exists(wiringPi wiringPiSetup "" HAVE_WIRINGPI_LIB)
 
 if (HAVE_WIRINGPI_LIB)
