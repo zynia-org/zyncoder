@@ -66,6 +66,7 @@
 
 #define	PI_THREAD(X)	void *X (void *dummy)
 
+
 // Function prototypes
 //	c++ wrappers thanks to a comment by Nick Lott
 //	(and others on the Raspberry Pi forums)
@@ -83,11 +84,12 @@ extern "C" {
 	extern void pullUpDnControl     (int pin, int pud) ;
 	extern void digitalWrite        (int pin, int value) ;
 	extern int  digitalRead         (int pin) ;
-	
+	extern int  analogRead          (int pin) ;
 	// Interrupts
 
 	extern int  wiringPiISR         (int pin, int mode, void (*function)(void)) ;
-
+        extern struct wiringPiNodeStruct *wiringPiFindNode (int pin) ;
+	extern int ads1115Setup (int pinBase, int i2cAddress) ;
 	
 #ifdef __cplusplus
 }

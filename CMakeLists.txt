@@ -241,7 +241,7 @@ elseif (NOT ZYNTHIAN_FORCE_WIRINGPI_EMU AND HAVE_WIRINGPI_LIB)
 
 else()
 	message("++ Using wiringPiEmu")
-	add_library(zyncore SHARED zyncore.c zyncontrol.h zyncontrol_vx.c zynpot.h zynpot.c zynrv112.h zynrv112.c zynads1115.h zynads1115.c zyncoder.h zyncoder.c wiringPiEmu.c zynmidirouter.h zynmidirouter.c zynmaster.h zynmaster.c)
+	add_library(zyncore SHARED zyncore.c zyncontrol.h zyncontrol_vx.c zynpot.h zynpot.c zynrv112.h zynrv112.c zynads1115.h zynads1115.c zyncoder.h zyncoder.c wiringPiEmu.h wiringPiEmu.c zynmidirouter.h zynmidirouter.c zynmaster.h zynmaster.c)
 	target_link_libraries(zyncore jack lo)
 
 endif()

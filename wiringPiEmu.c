@@ -122,6 +122,14 @@ int digitalRead(int pin) {
 	return gpio[pin].status;
 }
 
+int analogRead(int pin) {
+	if (pin>=GPIO_MAX) {
+		printf("ERROR WiringPiEmu: pin number (%d) is out of range\n",pin);
+		return 0;
+	}
+	return 0;
+}
+
 int wiringPiISR(int pin, int mode, void (*function)(void)) {
 	if (pin>=GPIO_MAX) {
 		printf("ERROR WiringPiEmu: pin number (%d) is out of range\n",pin);
@@ -131,3 +139,34 @@ int wiringPiISR(int pin, int mode, void (*function)(void)) {
 	gpio[pin].isrfunc=function;
 	return 1;
 }
+
+struct wiringPiNodeStruct
+{
+  int     pinBase ;
+  int     pinMax ;
+
+  int          fd ;	// Node specific
+  unsigned int data0 ;	//  ditto
+  unsigned int data1 ;	//  ditto
+  unsigned int data2 ;	//  ditto
+  unsigned int data3 ;	//  ditto
+
+           void   (*pinMode)          (struct wiringPiNodeStruct *node, int pin, int mode) ;
+           void   (*pullUpDnControl)  (struct wiringPiNodeStruct *node, int pin, int mode) ;
+           int    (*digitalRead)      (struct wiringPiNodeStruct *node, int pin) ;
+//unsigned int    (*digitalRead8)     (struct wiringPiNodeStruct *node, int pin) ;
+           void   (*digitalWrite)     (struct wiringPiNodeStruct *node, int pin, int value) ;
+//         void   (*digitalWrite8)    (struct wiringPiNodeStruct *node, int pin, int value) ;
+           void   (*pwmWrite)         (struct wiringPiNodeStruct *node, int pin, int value) ;
+           int    (*analogRead)       (struct wiringPiNodeStruct *node, int pin) ;
+           void   (*analogWrite)      (struct wiringPiNodeStruct *node, int pin, int value) ;
+
+  struct wiringPiNodeStruct *next ;
+} ;
+
+struct wiringPiNodeStruct dummyNode;
+struct wiringPiNodeStruct *wiringPiFindNode (int pin) {
+    return &dummyNode;
+}
+
+int ads1115Setup (int pinBase, int i2cAddress) { return 1; }

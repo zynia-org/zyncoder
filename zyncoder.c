@@ -60,7 +60,9 @@ extern void (*zynpot_cb)(int8_t, int32_t);
 // Global variables
 //-----------------------------------------------------------------------------
 
+#if defined(MCP23017_ENCODERS)
 extern zynmcp23017_t zynmcp23017s[MAX_NUM_MCP23017];
+#endif
 extern midi_filter_t midi_filter;
 
 zynswitch_t zynswitches[MAX_NUM_ZYNSWITCHES];
