@@ -64,7 +64,10 @@ extern void (*zynpot_cb)(int8_t, int32_t);
 // Global variables
 //-----------------------------------------------------------------------------
 
-extern zynmcp23017_t zynmcp23017s[MAX_NUM_MCP23017];
+#if defined(MCP23017_ENCODERS)
+  extern zynmcp23017_t zynmcp23017s[MAX_NUM_MCP23017];
+#endif // defined(MCP23017_ENCODERS)
+
 extern struct zmip_st zmips[MAX_NUM_ZMIPS];
 
 zynswitch_t zynswitches[MAX_NUM_ZYNSWITCHES];
