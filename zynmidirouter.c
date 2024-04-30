@@ -1036,7 +1036,10 @@ int zmop_get_cc_route(int iz, uint8_t *cc_route) {
 //-----------------------------------------------------------------------------
 
 int init_jack_midi(char *name) {
-	if ((jack_client = jack_client_open(name, JackNullOption, 0, 0))==NULL) {
+
+	jack_status_t ret_status, *ret_status_p = &ret_status;
+
+	if ((jack_client = jack_client_open(name, JackNullOption, NULL))==NULL) {
 		fprintf(stderr, "ZynMidiRouter: Error connecting with jack server.\n");
 		return 0;
 	}
@@ -1054,7 +1057,6 @@ int init_jack_midi(char *name) {
 	if (!zmip_init(ZMIP_CTRL, "ctrl_in", ZMIP_CTRL_FLAGS)) return 0;
 	if (!zmip_init(ZMIP_FAKE_INT, NULL, ZMIP_INT_FLAGS)) return 0;
 	if (!zmip_init(ZMIP_FAKE_UI, NULL, ZMIP_UI_FLAGS)) return 0;
-
 	// Init MIDI Output Ports (ZMOPs)
 	for (i = 0; i < NUM_ZMOP_CHAINS; i++) {
 		sprintf(port_name, "ch%d_out", i);
@@ -1895,10 +1897,10 @@ int init_zynmidi_buffer() {
 		return 0;
 	}
 	// lock the buffer into memory, this is *NOT* realtime safe, do it before using the buffer!
-	if (jack_ringbuffer_mlock(zynmidi_buffer)) {
-		fprintf(stderr, "ZynMidiRouter: Error locking memory for zynmidi ring-buffer.\n");
-		return 0;
-	}
+	//if (jack_ringbuffer_mlock(zynmidi_buffer)) {
+	//	fprintf(stderr, "ZynMidiRouter: Error locking memory for zynmidi ring-buffer.\n");
+	//	return 0;
+	//}
 	return 1;
 }
 

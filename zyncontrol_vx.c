@@ -184,7 +184,8 @@ void init_zynpots() {
 //-----------------------------------------------------------------------------
 
 int init_zyncontrol() {
-	gpiod_init_callbacks();
+// zynia 2024-04-24
+//	gpiod_init_callbacks();
 	get_wiring_config();
 	#if defined(MCP23017_ENCODERS)
 		init_zynmcp23017s();
@@ -200,7 +201,8 @@ int init_zyncontrol() {
 	#ifdef ZYNTOF_CONFIG
 		init_zyntof();
 	#endif
-	gpiod_start_callbacks();
+// zynia 2024-04-24
+//	gpiod_start_callbacks();
 	#if defined(MCP23008_ENCODERS)
 		init_poll_zynswitches();
 	#endif

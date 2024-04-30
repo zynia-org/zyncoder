@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.0)
 #project(zyncore LANGUAGES CXX)
 project(zyncore)
-
+set(CMAKE_VERBOSE_MAKEFILE ON)
 include(CheckIncludeFiles)
 include(CheckLibraryExists)
 

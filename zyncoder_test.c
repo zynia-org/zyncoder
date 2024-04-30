@@ -55,7 +55,6 @@ int main() {
 	printf("Starting ZynCore...\n");
 	init_zyncontrol();
 	init_zynmidirouter();
-
 	#ifdef DEBUG
 	if (zynpots[0].type==ZYNPOT_RV112) {
 		fprintf(stdout, "Range 25 = %d\n", RV112_ADS1115_RANGE_25);
@@ -63,7 +62,7 @@ int main() {
 		fprintf(stdout, "Range 75 = %d\n", RV112_ADS1115_RANGE_75);
 		fprintf(stdout, "Range 100 = %d\n", RV112_ADS1115_RANGE_100);
 	}
-	#endif	
+	#endif
 
 	int last_zynswitch_index = get_last_zynswitch_index();
 	int num_zynswitches = get_num_zynswitches();
