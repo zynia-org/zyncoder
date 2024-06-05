@@ -1,13 +1,13 @@
 /*
  * ******************************************************************
  * ZYNTHIAN PROJECT: ZynMidiRouter Library
- * 
- * MIDI router library: Implements the MIDI router & filter 
- * 
+ *
+ * MIDI router library: Implements the MIDI router & filter
+ *
  * Copyright (C) 2015-2024 Fernando Moyano <jofemodo@zynthian.org>
  *
  * ******************************************************************
- * 
+ *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
  * published by the Free Software Foundation; either version 2 of
@@ -19,7 +19,7 @@
  * GNU General Public License for more details.
  *
  * For a full copy of the GNU General Public License see the LICENSE.txt file.
- * 
+ *
  * ******************************************************************
  */
 
@@ -1039,7 +1039,7 @@ int init_jack_midi(char *name) {
 
 	jack_status_t ret_status, *ret_status_p = &ret_status;
 
-	if ((jack_client = jack_client_open(name, JackNullOption, NULL))==NULL) {
+	if ((jack_client = jack_client_open(name, JackNoStartServer, 0))==NULL) {
 		fprintf(stderr, "ZynMidiRouter: Error connecting with jack server.\n");
 		return 0;
 	}
@@ -1453,6 +1453,8 @@ int jack_process(jack_nframes_t nframes, void *arg) {
 				// + Ignore ACTI/MULTI flag
 				// + ALL channel messages pass untranslated
 				else {
+					if (izmop <= ZMOP_CH15)
+						continue; // Don't send unconfigured chain outputs
 					// Leave MIDI channel untouched
 				}
 
@@ -1662,6 +1664,7 @@ int zmip_send_master_ccontrol_change(uint8_t iz, uint8_t ctrl, uint8_t val) {
 	if (midi_master_chan >= 0) {
 		return zmip_send_ccontrol_change(iz, midi_master_chan, ctrl, val);
 	}
+	return 0;
 }
 
 int zmip_send_program_change(uint8_t iz, uint8_t chan, uint8_t prgm) {
@@ -1948,22 +1951,22 @@ int get_zynmidi_num_pending() {
 //-----------------------------------------------------------------------------
 
 int write_zynmidi_note_on(uint8_t chan, uint8_t num, uint8_t val) {
-	uint32_t ev = ((0xFF << 24) | (0x90 | (chan & 0x0F)) << 16) | (num << 8) | val;
+	uint32_t ev = ((0xFFu << 24) | (0x90 | (chan & 0x0F)) << 16) | (num << 8) | val;
 	return write_zynmidi(ev);
 }
 
 int write_zynmidi_note_off(uint8_t chan, uint8_t num, uint8_t val) {
-	uint32_t ev = ((0xFF << 24) | (0x80 | (chan & 0x0F)) << 16) | (num << 8) | val;
+	uint32_t ev = ((0xFFu << 24) | (0x80 | (chan & 0x0F)) << 16) | (num << 8) | val;
 	return write_zynmidi(ev);
 }
 
 int write_zynmidi_ccontrol_change(uint8_t chan, uint8_t num, uint8_t val) {
-	uint32_t ev = ((0xFF << 24) | (0xB0 | (chan & 0x0F)) << 16) | (num << 8) | val;
+	uint32_t ev = ((0xFFu << 24) | (0xB0 | (chan & 0x0F)) << 16) | (num << 8) | val;
 	return write_zynmidi(ev);
 }
 
 int write_zynmidi_program_change(uint8_t chan, uint8_t num) {
-	uint32_t ev = ((0xFF << 24) | (0xC0 | (chan & 0x0F)) << 16) | (num << 8);
+	uint32_t ev = ((0xFFu << 24) | (0xC0 | (chan & 0x0F)) << 16) | (num << 8);
 	return write_zynmidi(ev);
 }
 

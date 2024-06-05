@@ -174,8 +174,8 @@ int setup_zynswitch(uint8_t i, uint16_t pin, uint8_t off_state) {
 		if (pin<100) {
 			struct gpiod_line *line = gpiod_chip_get_line(gpio_chip, pin);
 			if (line) {
-				int flags = 0;
-				if (!off_state) flags = GPIOD_LINE_REQUEST_FLAG_ACTIVE_LOW;
+				int flags = GPIOD_LINE_REQUEST_FLAG_BIAS_PULL_UP;
+				if (!off_state) flags |= GPIOD_LINE_REQUEST_FLAG_ACTIVE_LOW;
 				if (gpiod_line_request_both_edges_events_flags(line, ZYNCORE_CONSUMER, flags)>=0) {
 					zsw->enabled = 1;
 					zsw->pin = pin;
@@ -184,11 +184,11 @@ int setup_zynswitch(uint8_t i, uint16_t pin, uint8_t off_state) {
 					zynswitch_rbpi_ISR(i);
 					return 1;
 				} else {
-					fprintf(stderr, "ZynCore->setup_zynswitch(%d, %d, ...): Can't request line %d from RPI GPIO\n", i, pin);
+					fprintf(stderr, "ZynCore->setup_zynswitch(%d, %d, ...): Can't request line events from RPI GPIO\n", i, pin);
 					return 0;
 				}
 			} else {
-				fprintf(stderr, "ZynCore->setup_zynswitch(%d, %d, ...): Can't get line %d from RPI GPIO\n", i, pin);
+				fprintf(stderr, "ZynCore->setup_zynswitch(%d, %d, ...): Can't get line from RPI GPIO\n", i, pin);
 				return 0;
 			}
 		} 
@@ -487,8 +487,9 @@ int setup_zyncoder(uint8_t i, uint16_t pin_a, uint16_t pin_b) {
 			struct gpiod_line *line_a = gpiod_chip_get_line(gpio_chip, pin_a);
 			struct gpiod_line *line_b = gpiod_chip_get_line(gpio_chip, pin_b);
 			if (line_a && line_b) {
-				if (gpiod_line_request_both_edges_events_flags(line_a, ZYNCORE_CONSUMER, 0) >=0 &&
-					gpiod_line_request_both_edges_events_flags(line_b, ZYNCORE_CONSUMER, 0) >=0) {
+				int flags = GPIOD_LINE_REQUEST_FLAG_BIAS_PULL_UP;
+				if (gpiod_line_request_both_edges_events_flags(line_a, ZYNCORE_CONSUMER, flags) >=0 &&
+					gpiod_line_request_both_edges_events_flags(line_b, ZYNCORE_CONSUMER, flags) >=0) {
 					zcdr->line_a = line_a;
 					zcdr->line_b = line_b;
 					zcdr->pin_a = pin_a;
@@ -499,7 +500,7 @@ int setup_zyncoder(uint8_t i, uint16_t pin_a, uint16_t pin_b) {
 					zyncoder_rbpi_ISR(i);
 					return 1;
 				} else {
-					fprintf(stderr, "ZynCore->setup_zyncoder(%d, %d, %d): Can't request line from RPI GPIO\n", i, pin_a, pin_b);
+					fprintf(stderr, "ZynCore->setup_zyncoder(%d, %d, %d): Can't request line events from RPI GPIO\n", i, pin_a, pin_b);
 					return 0;
 				}
 			} else {
@@ -572,6 +573,7 @@ int setup_behaviour_zyncoder(uint8_t i, int32_t step) {
 	zyncoders[i].tsms = 0;
 	zyncoders[i].short_history = 0;
 	zyncoders[i].long_history = 0;
+	return 1;
 }
 
 int32_t get_value_zyncoder(uint8_t i) {
