@@ -291,7 +291,8 @@ int zmip_set_route_chains(int iz, int route);			// Route/un-route a MIDI input p
 #define FLAG_ZMOP_CHAN_TRANSFILTER 128
 #define FLAG_ZMOP_DIRECTOUT 256
 
-#define ZMOP_CHAIN_FLAGS (FLAG_ZMOP_TUNING|FLAG_ZMOP_NOTERANGE|FLAG_ZMOP_DROPSYS|FLAG_ZMOP_DROPSYSEX|FLAG_ZMOP_CHAN_TRANSFILTER|FLAG_ZMOP_DIRECTOUT)
+//#define ZMOP_CHAIN_FLAGS (FLAG_ZMOP_TUNING|FLAG_ZMOP_NOTERANGE|FLAG_ZMOP_DROPSYS|FLAG_ZMOP_DROPSYSEX|FLAG_ZMOP_CHAN_TRANSFILTER|FLAG_ZMOP_DIRECTOUT)
+#define ZMOP_CHAIN_FLAGS (FLAG_ZMOP_TUNING|FLAG_ZMOP_NOTERANGE|FLAG_ZMOP_DROPSYSEX|FLAG_ZMOP_CHAN_TRANSFILTER|FLAG_ZMOP_DIRECTOUT)
 
 // Structure describing a MIDI output
 struct zmop_st {
@@ -299,7 +300,7 @@ struct zmop_st {
 	void * buffer;					// pointer to jack midi output buffer
 	jack_ringbuffer_t * rbuffer;	// direct output ring buffer (optional)
 
-	int midi_chan;							// Single MIDI channel. -1 for using channel translation map.
+	int midi_chan;							// Single MIDI channel. -1 for using channel translation map only.
 	int midi_chans[16];						// MIDI channel translation map (-1 to disable a MIDI channel)
 	int route_from_zmips[MAX_NUM_ZMIPS];	// Flags indicating which inputs to route to this output
 	uint8_t cc_route[128];					// CCs routed to output (0 = blocked, 1 = routed)
@@ -383,6 +384,7 @@ int end_jack_midi();
 void populate_midi_event_from_rb(jack_ringbuffer_t *rb, jack_midi_event_t *event);
 void populate_zmip_event(struct zmip_st * zmip);
 int jack_process(jack_nframes_t nframes, void *arg);
+int jack_buffer_size_change(jack_nframes_t nframes, void *arg);
 void jack_connect_cb(jack_port_id_t a, jack_port_id_t b, int connect, void *arg);
 
 //-----------------------------------------------------------------------------

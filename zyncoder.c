@@ -73,6 +73,8 @@ extern struct zmip_st zmips[MAX_NUM_ZMIPS];
 zynswitch_t zynswitches[MAX_NUM_ZYNSWITCHES];
 zyncoder_t zyncoders[MAX_NUM_ZYNCODERS];
 
+uint16_t num_zynswitches = 0;
+
 //-----------------------------------------------------------------------------
 // Helper functions
 //-----------------------------------------------------------------------------
@@ -100,12 +102,15 @@ void reset_zynswitches() {
 }
 
 int get_num_zynswitches() {
+	return num_zynswitches;
+/*
 	int i;
 	int n = 0;
 	for (i=0;i<MAX_NUM_ZYNSWITCHES;i++) {
 		if (zynswitches[i].enabled!=0) n++;
 	}
 	return n;
+*/
 }
 
 int get_last_zynswitch_index() {
