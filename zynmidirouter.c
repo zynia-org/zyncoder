@@ -1122,6 +1122,9 @@ int init_jack_midi(char *name) {
 }
 
 int end_jack_midi() {
+	if (jack_deactivate(jack_client)) {
+		fprintf(stderr, "ZynMidiRouter: Error deactivating jack client.\n");
+	}
 	if (jack_client_close(jack_client)) {
 		fprintf(stderr, "ZynMidiRouter: Error closing jack client.\n");
 	}
