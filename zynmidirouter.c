@@ -118,7 +118,7 @@ int end_midi_router() {
 //-----------------------------------------------------------------------------
 
 void set_active_chain(int iz) {
-	if (iz > NUM_ZMOP_CHAINS || iz < -1) {
+	if (iz >= NUM_ZMOP_CHAINS || iz < -1) {
 		fprintf(stderr, "ZynMidiRouter: Active chain (%d) is out of range!\n", iz);
 		return;
 	}
@@ -380,6 +380,22 @@ int zmip_get_num_devs() {
 	return NUM_ZMIP_DEVS;
 }
 
+int zmip_get_seq_index() {
+	return ZMIP_SEQ;
+}
+
+int zmip_get_step_index() {
+	return ZMIP_STEP;
+}
+
+int zmip_get_int_index() {
+	return ZMIP_FAKE_INT;
+}
+
+int zmip_get_ctrl_index() {
+	return ZMIP_CTRL;
+}
+
 int zmip_set_flags(int iz, uint32_t flags) {
 	if (iz < 0 || iz >= MAX_NUM_ZMIPS) {
 		fprintf(stderr, "ZynMidiRouter: Bad input port index (%d).\n", iz);
@@ -489,6 +505,7 @@ int zmop_init(int iz, char *name, uint32_t flags) {
 	zmops[iz].transpose_octave = 0;
 	zmops[iz].transpose_semitone = 0;
 	memset(zmops[iz].note_state, 0, 128);
+	memset(zmops[iz].note_transpose, 0, 128);
 	int i;
 	for (i = 0; i < 16; i++) {
 		zmops[iz].last_pb_val[i] = 8192;
@@ -895,9 +912,6 @@ int zmop_get_routes_info_all(int *buffer) {
 
 int set_global_transpose(int8_t transpose) {
 	global_transpose = transpose;
-	// All sounds off - blunt but avoids stuck notes
-	for (int chan = 0; chan < 16; ++chan)
-		ui_send_ccontrol_change(chan, 120, 0);
 	return global_transpose;
 }
 
@@ -1059,7 +1073,7 @@ int init_jack_midi(char *name) {
 	if (!zmip_init(ZMIP_FAKE_INT, NULL, ZMIP_INT_FLAGS)) return 0;
 	if (!zmip_init(ZMIP_FAKE_UI, NULL, ZMIP_UI_FLAGS)) return 0;
 	// Init MIDI Output Ports (ZMOPs)
-	for (i = 0; i < NUM_ZMOP_CHAINS; i++) {
+	for (i = ZMOP_CH0; i <= ZMOP_CH15; i++) {
 		sprintf(port_name, "ch%d_out", i);
 		if (!zmop_init(ZMOP_CH0 + i, port_name, ZMOP_CHAIN_FLAGS)) return 0;
 		//zmop_set_midi_chan(ZMOP_CH0 + i, i);
@@ -1076,23 +1090,23 @@ int init_jack_midi(char *name) {
 		zmop_set_midi_chan_all(ZMOP_DEV0 + i);
 	}
 
-	// Route MIDI Input to MIDI Output Ports: ZMIPs => ZMOPs
+	// Route MIDI Input to MIDI Output Ports: ZMIPs => chain ZMOPs + STEPSEQ
 	for (i = 0; i < ZMOP_CTRL; i++) {
-		// External Input Devices to all ZMOPS => By default, all chains receive from all devices
+		// External Input Devices to all => By default, all chains receive from all devices
 		for (j = 0; j < NUM_ZMIP_DEVS; j++) {
 			if (!zmop_set_route_from(i, ZMIP_DEV0 + j, 1)) return 0;
 		}
-		// MIDI player to all ZMOPS
-		if (!zmop_set_route_from(i, ZMIP_SEQ, 1)) return 0;
-		// Step Sequencer playback (ZMIP_STEP) to all ZMOPS except sequencer capture (ZMOP_STEP)
-		if (i != ZMOP_STEP) {
-			if (!zmop_set_route_from(i, ZMIP_STEP, 1)) return 0;
-		}
-		// Internal MIDI to all ZMOPS
+		// Internal MIDI to all (by default)
 		if (!zmop_set_route_from(i, ZMIP_FAKE_INT, 1)) return 0;
 		// MIDI from UI to Chain's ZMOPS
-		if (i >= ZMOP_CH0 && i <= ZMOP_CH0 + NUM_ZMOP_CHAINS) {
+		if (i >= ZMOP_CH0 && i <= ZMOP_MOD) {
 			if (!zmop_set_route_from(i, ZMIP_FAKE_UI, 1)) return 0;
+		}
+		// MIDI player to all
+		if (!zmop_set_route_from(i, ZMIP_SEQ, 1)) return 0;
+		// Step Sequencer playback (ZMIP_STEP) to all ZMOPS except stepseq capture (ZMOP_STEP)
+		if (i != ZMOP_STEP) {
+			if (!zmop_set_route_from(i, ZMIP_STEP, 1)) return 0;
 		}
 	}
 	// ZMIP_CTRL is not routed to any output port, only captured by Zynthian UI
@@ -1110,6 +1124,9 @@ int init_jack_midi(char *name) {
 }
 
 int end_jack_midi() {
+	if (jack_deactivate(jack_client)) {
+		fprintf(stderr, "ZynMidiRouter: Error deactivating jack client.\n");
+	}
 	if (jack_client_close(jack_client)) {
 		fprintf(stderr, "ZynMidiRouter: Error closing jack client.\n");
 	}
@@ -1141,6 +1158,45 @@ void populate_midi_event_from_rb(jack_ringbuffer_t *rb, jack_midi_event_t *event
 		} else {
 			// Put internal events at start of buffer (it is arbitrary so beginning is as good as anywhere)
 			event->time = last_frame;
+			// Adjust event size depending of MIDI header
+			switch (event->buffer[0]) {
+				case 0xF4:
+				case 0xF5:
+				case 0xF7:
+				case 0xF9:
+					event->size = 1;
+					// Ignore reserved messages??
+					// event->time = 0xFFFFFFFF;
+					return;
+				case 0xF2:
+					event->size = 3;
+					return;
+				case 0xF1:
+				case 0xF3:
+					event->size = 2;
+					return;
+				case 0xF6:
+				case 0xF8:
+				case 0xFA:
+				case 0xFB:
+				case 0xFC:
+				case 0xFD:
+					event->size = 1;
+					return;
+			}
+			switch (event->buffer[0] >> 4) {
+				case 0x8:
+				case 0x9:
+				case 0xA:
+				case 0xB:
+				case 0xE:
+					event->size = 3;
+					return;
+				case 0xC:
+				case 0xD:
+					event->size = 2;
+					return;
+			}
 		}
 	}
 }
@@ -1529,23 +1585,31 @@ void zmop_push_event(struct zmop_st * zmop, jack_midi_event_t * ev) {
 
 	uint8_t event_type = ev->buffer[0] >> 4;
 	uint8_t event_chan = ev->buffer[0] & 0x0F;
-	int temp_note = -1;
+	int event_num = -1;
 
 	if ((zmop->flags & FLAG_ZMOP_NOTERANGE) && (event_type == NOTE_OFF || event_type == NOTE_ON)) {		
 		// Note-range & Transpose Note-on/off messages
-		int note = ev->buffer[1];
+		int8_t offset;
+		event_num = ev->buffer[1];
 
-		// Note-range
-		if (note < zmop->note_low || note > zmop->note_high)
-			return;
+		// Note-off => Send the note-off with the same transpose value that the tracked note-on
+		if (event_type == NOTE_OFF) {
+			offset = zmop->note_transpose[event_num];
+		}
+		// Note-on
+		else {
+			// Note-range
+			if (event_num < zmop->note_low || event_num > zmop->note_high)
+				return; // Raw note out of range
 
-		// Transpose
-		note += zmop->transpose_octave * 12 + zmop->transpose_semitone + global_transpose;
+			// Transpose
+			offset = zmop->transpose_octave * 12 + zmop->transpose_semitone + global_transpose;
+			zmop->note_transpose[event_num] = offset;
+		}
+		// Transpose note event
+		int note = event_num + offset;
 		if (note > 0x7F || note < 0)
 			return; // Transposed note out of range
-
-		// Store original note from before transpose to restore after sending this event
-		temp_note = ev->buffer[1];
 		ev->buffer[1] = (uint8_t)(note & 0x7F);
 	}
 
@@ -1594,9 +1658,9 @@ void zmop_push_event(struct zmop_st * zmop, jack_midi_event_t * ev) {
 		if (jack_midi_event_write(zmop->buffer, xev.time, xev.buffer, ev->size))
 			fprintf(stderr, "ZynMidiRouter: Error writing jack midi output event!\n");
 	
-	// Restore the original note from before transpose
-	if (temp_note >= 0)
-		ev->buffer[1] = (uint8_t)(temp_note & 0x7F);
+	// Restore the original note before transpose
+	if (event_num >= 0)
+		ev->buffer[1] = (uint8_t)(event_num & 0x7F);
 }
 
 

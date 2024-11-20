@@ -179,8 +179,8 @@ void reset_midi_filter_cc_map();
 #define ZMIP_DEV23 23
 #define ZMIP_SEQ 24				// MIDI from SMF player
 #define ZMIP_STEP 25			// MIDI from StepSeq
-#define ZMIP_CTRL 26			// Engine's controller feedback (setBfree, others?) => It's hardcoded in chain_manager. Update if this number changes!!
-#define ZMIP_FAKE_INT 27		// BUFFER: Internal MIDI (to ALL zmops => MUST BE CHANGED!!) => Used by zyncoder, zynaptik (CV/Gate), zyntof, etc.
+#define ZMIP_FAKE_INT 26		// BUFFER: Internal MIDI (to ALL zmops => MUST BE CHANGED!!) => Used by zyncoder, zynaptik (CV/Gate), zyntof, etc.
+#define ZMIP_CTRL 27			// Engine's controller feedback (setBfree, others?) => It's hardcoded in chain_manager. Update if this number changes!!
 #define ZMIP_FAKE_UI 28			// BUFFER: MIDI from UI (to Chain zmops)
 #define MAX_NUM_ZMIPS 29
 #define NUM_ZMIP_DEVS 24
@@ -219,6 +219,11 @@ struct zmip_st {
 int zmip_init(int iz, char *name, uint32_t flags);
 int zmip_end(int iz);
 int zmip_get_num_devs();
+int zmip_get_seq_index();
+int zmip_get_step_index();
+int zmip_get_int_index();
+int zmip_get_ctrl_index();
+
 // Flag management
 int zmip_set_flags(int iz, uint32_t flags);
 uint32_t zmip_get_flags(int iz);
@@ -278,7 +283,7 @@ int zmip_set_route_chains(int iz, int route);			// Route/un-route a MIDI input p
 #define ZMOP_DEV22 41
 #define ZMOP_DEV23 42
 #define MAX_NUM_ZMOPS 43
-#define NUM_ZMOP_CHAINS 16
+#define NUM_ZMOP_CHAINS 17
 #define NUM_ZMOP_DEVS 24
 
 #define FLAG_ZMOP_DROPPC 1
@@ -311,6 +316,7 @@ struct zmop_st {
 	int8_t transpose_semitone;				// Transpose fine => semitone
 
 	uint8_t note_state[128];				// Note state array for managing pressed notes across active chain changes.
+	int8_t note_transpose[128];				// Note transpose array for managing pressed notes across transpose changes.
 	uint16_t last_pb_val[16];				// Last pitch-bending value. Do we need multi-channel tracking for MPE?
 
 	int n_connections;				// Quantity of jack connections (used for optimisation)
